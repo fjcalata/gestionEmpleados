@@ -1,0 +1,11 @@
+@using Microsoft.Extensions.Configuration;
+
+@model int?
+
+@inject IConfiguration configuration;
+
+@(Html.Kendo().IntegerTextBoxFor(m => m)
+                      .HtmlAttributes(new { style = "width:95%" })
+                      .Min(1)
+                      .Max(int.MaxValue)
+)

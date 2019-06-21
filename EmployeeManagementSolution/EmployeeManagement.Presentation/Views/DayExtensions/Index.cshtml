@@ -1,0 +1,94 @@
+﻿@using EmployeeManagement.BL.Interfaces;
+
+@inject IExtensionTypesBL extensionTypes;
+@inject IPersonsBL persons;
+
+@{ 
+    var titulo = "Prolongación de jornada / Conciliación familiar";
+}
+@{
+    ViewData["Title"] = @titulo;
+    var firstDayOfTheYear = new DateTime(DateTime.Now.Year, 1, 1);
+    var lastDayOfTheYear = new DateTime(DateTime.Now.Year + 1, 1, 1).AddDays(-1);
+}
+
+<h1>@titulo</h1>
+
+@(Html.Kendo().Grid<EmployeeManagement.Entities.Models.DayExtensions>()
+    .Name("grid")
+    .Columns(columns =>
+    {
+        columns.Command(command =>
+        {
+            command.Destroy().Text(" ");
+        }).Title(" ").Width(35);
+
+        columns.ForeignKey(p => p.PersonsId, persons.GetIdsAndNames(), "Id", "Name")
+                 .Filterable(filterable =>
+                     filterable.Search(true).Multi(true).CheckAll(true)
+                     )
+                     .ClientFooterTemplate("Total Empleados: #=max#")
+                     .Width(280);
+
+        columns.ForeignKey(p => p.ExtensionTypeId, extensionTypes.Get(), "Id", "Name").Width(150);
+        columns.Bound(p => p.RequestDate).Format("{0: dd/MM/yyyy}").Width(180);
+        columns.Bound(p => p.AffectationDate).Format("{0: dd/MM/yyyy}").Width(200);
+        columns.Bound(p => p.HoursNumber)
+                     .ClientFooterTemplate("Total horas: #=sum#")
+                     .ClientGroupFooterTemplate("Total empleado: #=sum#")
+                     .Width(150);
+    })
+    .Filterable()
+    .Pageable(p =>
+    {
+        p.Refresh(true);
+        p.PageSizes(new int[] { 50, 100, 200, 500, 1000 });
+        p.ButtonCount(5);
+    })
+    .ToolBar(toolbar =>
+    {
+        toolbar.Create().Text("Añadir");
+        toolbar.Excel().Text("Exportar a Excel");
+        toolbar.Pdf().Text("Exportar a PDF");
+    })
+    .Excel(excel => excel
+        .AllPages(true)
+            .FileName("prolongaciones de jornada.xlsx")
+            .Filterable(true)
+        )
+        .Pdf(pdf => pdf
+        .AllPages()
+        .FileName("prolongaciones de jornada.pdf")
+    )
+    .Events(p => p.Edit("onGridEdit").DataBound("onDataBoundRemoveButtonsPreviousDate"))
+    .Pageable(p => p.AlwaysVisible(false))
+    .Sortable()
+    .Scrollable()
+    .Groupable()
+    .Editable(editable => editable.Mode(GridEditMode.PopUp).Window(window => window.Width(500).Title(titulo)))
+    .DataSource(dataSource => dataSource
+        .Ajax()
+        .Filter(p=>p.Add(x=>x.AffectationDate).IsGreaterThanOrEqualTo(firstDayOfTheYear).And().IsLessThanOrEqualTo(lastDayOfTheYear))
+        .Aggregates(aggregates =>
+                  {
+                      aggregates.Add(p => p.PersonsId).Max();
+                      aggregates.Add(p => p.HoursNumber).Sum();
+                  })
+         .Group(groups => groups.Add(p => p.PersonsId))
+         .Sort(sort => sort.Add("AffectationDate").Descending())
+         .Events(p => p.Error("errorEx").RequestStart("onRequestStart").RequestEnd("onRequestEnd"))
+        .PageSize(50)
+            .Model(model =>
+            {
+                model.Id(p => p.Id);
+                model.Field(p => p.State).DefaultValue(true);
+            })
+        .Batch(false)
+        .ServerOperation(true)
+        .Read(read => read.Action("Get", "DayExtensions"))
+        .Create(read => read.Action("Add", "DayExtensions").Data("getSelectedPersons"))
+        .Destroy(destroy => destroy.Action("Delete", "DayExtensions"))
+    )
+
+)
+

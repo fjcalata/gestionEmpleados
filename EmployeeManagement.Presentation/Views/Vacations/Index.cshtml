@@ -1,0 +1,102 @@
+﻿@using EmployeeManagement.BL.Interfaces;
+
+@{
+    ViewData["Title"] = "Vacaciones";
+    var firstDayOfTheYear = new DateTime(DateTime.Now.Year, 1, 1);
+    var lastDayOfTheYear = new DateTime(DateTime.Now.Year + 1, 1, 1).AddDays(-1);
+}
+
+@inject IAbsenceTypeBL absenceTypes;
+@inject IPersonsBL persons;
+
+<script>
+    function getAditionalDataVacations() {
+        var persons = getSelectedPersons();
+        var multipleDates = getDateMultiple();
+
+        return {
+            personsIds: persons.personsIds,
+            vacationDates: multipleDates.dates
+        };
+    }
+</script>
+
+<h1>Vacaciones</h1>
+
+@(Html.Kendo().Grid<EmployeeManagement.Entities.Models.Vacations>()
+              .Name("gridVacations")
+              .Columns(columns =>
+              {
+                  columns.Command(command =>
+                  {
+                      command.Destroy().Text(" ").HtmlAttributes(new { title = "Eliminar" });
+                  }).Title(" ").Width(35);
+
+                  columns.ForeignKey(p => p.PersonsId, persons.GetIdsAndNames(), "Id", "Name")
+                      .Filterable(filterable =>
+                          filterable.Search(true).Multi(true).CheckAll(true)
+                          )
+                      .ClientFooterTemplate("Total empleados con vacaciones: #=max#")
+                      .Width(300);
+
+                  columns.ForeignKey(p => p.AbsenseTypeId, absenceTypes.Get(), "Id", "Name").Width(200);
+                  columns.Bound(p => p.Date).Format("{0: dd/MM/yyyy}")
+                      .ClientFooterTemplate("Total vacaciones empleados: #=count#")
+                      .ClientGroupFooterTemplate("Total vacaciones empleado: #=count#")
+                      .Width(200);
+              })
+              .Filterable()              
+              .Pageable(p =>
+              {
+                  p.Refresh(true);
+                  p.PageSizes(new int[] { 50, 100, 200, 500, 1000 });
+                  p.ButtonCount(5);
+              })
+              .ToolBar(toolbar =>
+              {
+                  toolbar.Create().Text("Añadir");
+                  toolbar.Excel().Text("Exportar a Excel");
+                  toolbar.Pdf().Text("Exportar a PDF");
+              })
+              .Excel(excel => excel
+                  .AllPages(true)
+                  .FileName("vacaciones.xlsx")
+                  .Filterable(true)
+              )
+              .Pdf(pdf => pdf
+                  .AllPages()
+                  .FileName("vacaciones.pdf")
+              )
+              .Events(p => p.Edit("onGridEdit").DataBound("onDataBoundRemoveButtonsPreviousDate"))
+              .Pageable(p => p.AlwaysVisible(false))
+              .Sortable()
+              .Scrollable()
+              .Groupable()
+              .Editable(editable => editable.Mode(GridEditMode.PopUp).Window(window => window.Width(500).Title("Vacaciones")))
+              .Mobile(MobileMode.Auto)
+              .DataSource(dataSource => dataSource
+                  .Ajax()
+                  .Filter(p => p.Add(x => x.Date).IsGreaterThanOrEqualTo(firstDayOfTheYear).And().IsLessThanOrEqualTo(lastDayOfTheYear))
+                  .Aggregates(aggregates =>
+                  {
+                      aggregates.Add(p => p.PersonsId).Max();
+                      aggregates.Add(p => p.Date).Count();
+                  })
+                  .Group(groups => groups.Add(p => p.PersonsId))
+                  .Sort(sort => sort.Add("Date").Descending())
+                  .Events(p => p.Error("errorEx").RequestStart("onRequestStart").RequestEnd("onRequestEnd"))
+                  .PageSize(50)
+                  .Model(model =>
+                  {
+                      model.Id(p => p.Id);
+                      model.Field(p => p.State).DefaultValue(true);
+                      model.Field(p => p.IsPreviousDate).DefaultValue(false);
+                  })
+                  .Batch(false)
+                  .ServerOperation(false)
+                  .Read(read => read.Action("Get", "Vacations"))
+                  .Create(read => read.Action("Add", "Vacations").Data("getAditionalDataVacations"))
+                  .Update(update => update.Action("Edit", "Vacations").Data("getAditionalDataVacations"))
+                  .Destroy(destroy => destroy.Action("Delete", "Vacations"))
+              )
+)

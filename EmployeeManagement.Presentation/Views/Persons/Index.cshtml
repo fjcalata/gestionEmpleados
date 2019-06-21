@@ -1,0 +1,139 @@
+﻿@using EmployeeManagement.BL.Interfaces;
+
+@{
+    ViewData["Title"] = "Empleados";
+}
+
+@inject IFunctionTypesBL functionTypes;
+@inject IDepartmentsBL department;
+
+<h1>Empleados</h1>
+
+@(Html.Kendo().Grid<EmployeeManagement.Entities.Models.Persons>()
+                    .Name("gridPersons")
+                    .Columns(columns =>
+                    {
+                        columns.Command(command =>
+                        {
+                            command.Edit().Text(" ").UpdateText("Aceptar");
+                            command.Destroy().Text(" ");
+                        }).Title("Acciones").Width(90);
+                        columns.Bound(p => p.Name).Width(200);
+                        columns.Bound(p => p.LastName).Width(200);
+                        columns.Bound(p => p.CorporationEmail).Width(240);
+                        columns.Bound(p => p.Email).Width(240);
+                        columns.ForeignKey(p => p.DepartmentsId, department.Get(), "Id", "Name").Width(160);
+                        columns.ForeignKey(p => p.FunctionTypesId, functionTypes.Get(), "Id", "Name").Width(170);
+                        columns.Bound(p => p.Adress).Width(240);
+                        columns.Bound(p => p.Locality).Width(200);
+                        columns.Bound(p => p.PostalCode).Width(180);
+                        columns.Bound(p => p.SocialSecurityNumber).Width(180);
+                    })
+                    .Filterable()
+                    .Pageable(p =>
+                    {
+                        p.Refresh(true);
+                        p.PageSizes(new int[] { 50, 100, 200, 500, 1000 });
+                        p.ButtonCount(5);
+                    })
+                    .ToolBar(toolbar =>
+                    {
+                        toolbar.Create().Text("Añadir");
+                        toolbar.Custom().Text("Importar").IconClass("k-icon k-i-upload").HtmlAttributes(new { @onclick = "importData();" });
+                        toolbar.Excel().Text("Exportar a Excel");
+                        toolbar.Pdf().Text("Exportar a PDF");
+                    })
+                    .Excel(excel => excel
+                        .AllPages(true)
+                            .FileName("Empleados.xlsx")
+                            .Filterable(true)
+                        )
+                        .Pdf(pdf => pdf
+                        .AllPages()
+                        .FileName("Empleados.pdf")
+                    )
+                    .Pageable(p => p.AlwaysVisible(true))
+                    .Sortable()
+                    .Scrollable()
+                    .ClientDetailTemplateId("gridTemplate")
+                    .Editable(editable => editable.Mode(GridEditMode.PopUp).Window(window => window.Width(500).Title("Empleado")))
+                    .DataSource(dataSource => dataSource
+                        .Ajax()
+                        .Events(p => p.Error("errorEx"))
+                        .PageSize(50)
+                            .Model(model =>
+                            {
+                                model.Id(p => p.Id);
+                                model.Field(p => p.State).DefaultValue(true);
+                            })
+                        .Batch(false)
+                        .ServerOperation(true)
+                        .Read(read => read.Action("Get", "Persons"))
+                        .Create(read => read.Action("Add", "Persons"))
+                        .Update(update => update.Action("Edit", "Persons"))
+                    )
+
+)
+
+<script id="gridTemplate" type="text/kendo-tmpl">
+    @*@(Html.Kendo().TabStrip()
+        .Name("tabStrip_#=Id#")
+        .SelectedIndex(0)
+        .Animation(animation => animation.Open(open => open.Fade(FadeDirection.In)))
+        .Items(items =>
+        {
+            items.Add().Text("Formación").Content(@<text>*@
+    @(Html.Kendo().Grid<EmployeeManagement.Entities.Models.Trainings>()
+                            .Name("grid_#=Id#")
+                            .Columns(columns =>
+                            {
+                                columns.Command(command =>
+                                {
+                                    command.Edit().Text(" ").UpdateText("Aceptar").HtmlAttributes(new { title = "Editar", data_toggle = "tooltip", data_placement = "bottom" });
+                                    command.Destroy().Text(" ").HtmlAttributes(new { title = "Eliminar", data_toggle = "tooltip", data_placement = "bottom" }); ;
+                                }).Title("Acciones").Width(90);
+                                columns.Bound(o => o.CertificationId).ClientTemplate("\\#= data.Certification==null ? '' : data.Certification.Name \\#");
+                                columns.Bound(o => o.Degree);
+                                columns.Bound(o => o.StartDate).Format("{0: dd/MM/yyyy}");
+                                columns.Bound(o => o.EndDate).Format("{0: dd/MM/yyyy}");
+                                columns.Bound(o => o.IsOfficial);
+                            })
+                            .DataSource(dataSource => dataSource
+                            .Ajax()
+                            .Events(p => p.Error("errorEx"))
+                            .Model(model =>
+                            {
+                                model.Id(x => x.Id);
+                                model.Field(x => x.Id);
+                                model.Field(x => x.CertificationId);
+                                model.Field(x => x.Degree);
+                                model.Field(p => p.State).DefaultValue(true);
+                            })
+                            .Read(read => read.Action("Get", "Trainings", new { personId = "#=Id#" }))
+                            .Create(read => read.Action("Add", "Trainings", new { personId = "#=Id#" }))
+                            .Update(update => update.Action("Edit", "Trainings", new { personId = "#=Id#" }))
+                            .Destroy(destroy => destroy.Action("Delete", "Trainings", new { personId = "#=Id#" }))
+                            )                            
+                            .ToolBar(toolbar =>
+                            {
+                                toolbar.Create().Text("Añadir formación");
+                            })
+                            .Editable(editable => editable.Mode(GridEditMode.PopUp).Window(window => window.Width(550).Title("Formación")))
+                        .Sortable()
+                        .ToClientTemplate())
+    @*</text>);
+            //     items.Add().Text("Contact Information").Content(
+            //    "<div class='employee-details'>" +
+            //        "<ul>" +
+            //            "<li><label>Country:</label>#= Country #</li>" +
+            //            "<li><label>City:</label>#= City #</li>" +
+            //            "<li><label>Address:</label>#= Address #</li>" +
+            //            "<li><label>Home Phone:</label>#= HomePhone #<li>" +
+            //        "</ul>" +
+            //    "</div>"
+            //);
+        }).ToClientTemplate())*@
+
+</script>
+
+

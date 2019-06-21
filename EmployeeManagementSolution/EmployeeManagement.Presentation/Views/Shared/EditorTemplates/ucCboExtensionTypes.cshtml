@@ -1,0 +1,19 @@
+@model int
+
+@(Html.Kendo().ComboBoxFor(m => m)        
+        .HtmlAttributes(new { style = "width:95% !important", required = "true", validationmessage = "El tipo de extensión es requerido."})
+        .Placeholder("Selecciona...")
+        .DataTextField("Name")
+        .DataValueField("Id")        
+        .Enable(true)
+        .Filter(FilterType.Contains)
+        .Suggest(true)
+        .ValuePrimitive(true)
+        .DataSource(source =>
+        {
+            source.Read(read =>
+            {
+                read.Action("Get", "ExtensionTypes");
+            });
+        })
+)

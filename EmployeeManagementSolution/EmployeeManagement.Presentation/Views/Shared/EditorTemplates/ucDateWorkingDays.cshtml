@@ -1,0 +1,29 @@
+@model DateTime?
+
+@using EmployeeManagement.BL.Interfaces;
+
+@{
+    @inject IManageDatesBL manageDates;
+    var holydaysDates = manageDates.GetHolyDays();
+}
+
+<script>
+    function onDisableDates(date) {
+            var dates = [
+                @{
+                    foreach (var date in holydaysDates) {
+                        @:new Date('@date.ToString("MM/dd/yyyy")'),
+                    }
+                }
+            ];
+
+            return disableDates(date, dates);
+        }
+</script>
+
+@(Html.Kendo().DatePickerFor(m => m)
+        .Max(new DateTime(DateTime.Now.AddYears(1).Year, 12, 31).Date)
+        .Min(DateTime.Now)
+        .DisableDates("onDisableDates")
+)
+

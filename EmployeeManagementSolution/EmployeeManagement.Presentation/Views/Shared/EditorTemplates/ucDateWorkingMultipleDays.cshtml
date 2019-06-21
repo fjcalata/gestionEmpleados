@@ -1,0 +1,34 @@
+@model DateTime?
+
+@using EmployeeManagement.BL.Interfaces;
+
+@{
+    @inject IManageDatesBL manageDates;
+    var holydaysDates = manageDates.GetHolyDays();
+}
+
+<script>
+    function onDisableDates(date) {
+            var dates = [
+                @{
+                    foreach (var date in holydaysDates) {
+                        @:new Date('@date.ToString("MM/dd/yyyy")'),
+                    }
+                }
+            ];
+
+            return disableDates(date, dates);
+        }
+</script>
+
+@(Html.Kendo().Calendar()
+                        .Name("multipleDates")
+                        .Culture("es-ES")
+                        .WeekNumber(true)
+                        .Selectable("multiple")
+                        .Max(new DateTime(DateTime.Now.AddYears(1).Year, 12, 31).Date)
+                        .Min(DateTime.Now.Date)
+                        .Format("dd/MM/yyyy")
+                        .HtmlAttributes(new { style = "width:95% !important", required = "true", validationmessage = "El tipo de extensión es requerido." })
+                       .DisableDates("onDisableDates")
+)

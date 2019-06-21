@@ -1,0 +1,31 @@
+﻿@model EmployeeManagement.Presentation.Models.UserModel
+
+@{
+    ViewData["Title"] = "Index";
+    Layout = null;
+}
+<meta charset="utf-8" />
+
+<link href="~/css/login.css" rel="stylesheet" />
+<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
+
+
+<div class="wrapper">
+    <div id="formContent">
+        <div class="">
+            <h2>Gestión de empleados</h2>
+            <img src="~/images/logoEntrada.png" id="icon" alt="User Icon" />
+
+        </div>
+        <form asp-action="Login" asp-controller="Login" method="post">
+            <input type="hidden" name="returnUrl" asp-for="ReturnUrl" />
+            <input type="text" name="user" asp-for="user" class="" placeholder="Usuario" />
+            <input type="password" name="password" asp-for="user" class="" placeholder="Contraseña" />
+
+            <div asp-validation-summary="All" class="fadeIn first"></div>
+
+            <input type="submit" class="fadeIn second" value="Log In">
+        </form>
+    </div>
+</div>
+
